@@ -48,8 +48,6 @@ def getRigidBodyConstraints(nodeName):
 
   return constraints
 
-  
-
 
 
 
@@ -67,11 +65,19 @@ def getRigidBodyShapeType(rb):
 
   return shapeTypeMap[cmds.getAttr(rb + '.colliderShapeType' )]
 
+
 def getRigidBodyInfo(nodeName):
   
   bodyType = getRigidBodyShapeType(nodeName)
+
+  parent = cmds.listRelatives(nodeName, p=1)
  
   return {
+    "parent" : parent,
+    "position" : cmds.xform(parent, q=1, translation=1, worldSpace=True),
+    "scale" : cmds.xform(parent, q=1, scale=1, worldSpace=True),
+    "rotation" : cmds.xform(parent, q=1, rotation=1, worldSpace=True),
+    "transform" : cmds.xform(parent, q=1, m=1, worldSpace=True ),
     "type" : bodyType,
     "static" : cmds.getAttr(nodeName + '.bodyType' ) == 0,
     "mass" : cmds.getAttr(nodeName + '.mass' ),
@@ -79,7 +85,7 @@ def getRigidBodyInfo(nodeName):
     "length" : cmds.getAttr(nodeName + '.length' ),
     "friction" : cmds.getAttr(nodeName + '.friction' ),
     "restitution" : cmds.getAttr(nodeName + '.restitution' ),
-    "axis" : cmds.getAttr(nodeName + '.axis' ),
+    "axis" : {0: 'X', 1: 'Y', 2: 'Z'}[cmds.getAttr(nodeName + '.axis' )],
     "linearDamping" : cmds.getAttr(nodeName + '.linearDamping' ),
     "angularDamping" : cmds.getAttr(nodeName + '.angularDamping' ),
     "impulsePosition" : [i for i in cmds.getAttr(nodeName + '.impulsePosition' )[0]],
@@ -89,6 +95,25 @@ def getRigidBodyInfo(nodeName):
     "constraints" : getRigidBodyConstraints(nodeName)
   }
 
+
+def getConstraintData(nodeName):
+
+  shape = cmds.listRelatives(nodeName, s=1)[0]
+
+  return {
+    'rigidBodyA' : cmds.listConnections(shape + '.rigidBodyA', sh=1)[0],
+    'rigidBodyB' : cmds.listConnections(shape + '.rigidBodyB', sh=1)[0],
+    "type" : {0: "point",1: "hinge",2: "slider",3: "coneTwist",4: "sixDof"}[cmds.getAttr(nodeName + '.constraintType' )],
+    "translate" : [i for i in cmds.getAttr(nodeName + '.translate' )[0]],
+    "linearConstraintMin" : [i for i in cmds.getAttr(nodeName + '.linearConstraintMin' )[0]],
+    "linearConstraintMax" : [i for i in cmds.getAttr(nodeName + '.linearConstraintMax' )[0]],
+    "angularConstraintMin" : [i for i in cmds.getAttr(nodeName + '.angularConstraintMin' )[0]],
+    "angularConstraintMax" : [i for i in cmds.getAttr(nodeName + '.angularConstraintMax' )[0]],
+    "linearSpringDamping" : [i for i in cmds.getAttr(nodeName + '.linearSpringDamping' )[0]],
+    "linearSpringStiffness" : [i for i in cmds.getAttr(nodeName + '.linearSpringStiffness' )[0]],
+    "angularSpringDamping" : [i for i in cmds.getAttr(nodeName + '.angularSpringDamping' )[0]],
+    "angularSpringStiffness" : [i for i in cmds.getAttr(nodeName + '.angularSpringStiffness' )[0]]
+  }
 
 # get the joint transforms
 meshData["joints"] = {}
@@ -116,6 +141,8 @@ for i in skinWeights["jointNames"]:
   meshData["jointData"][i] = {
     "name" : i,
     "position" : cmds.xform(i, q=1, translation=1, worldSpace=True),
+    "scale" : cmds.xform(i, q=1, scale=1, worldSpace=True),
+    "rotation" : cmds.xform(i, q=1, rotation=1, worldSpace=True),
     "transform" : cmds.xform( i, q=1, m=1, worldSpace=True ),
     "parent" : parent,
     "children" : children,
@@ -133,7 +160,6 @@ rigidBodies = {}
 for i in meshData["jointData"]:
 
   for rb in meshData["jointData"][i]["rigidBodies"]:
-    
     rigidBodies[rb] = getRigidBodyInfo(rb)
 
 
@@ -144,10 +170,8 @@ meshData["rigidBodies"] = rigidBodies
 meshData['constraints'] = {}
 for i in meshData["rigidBodies"]:
 
-  print meshData["rigidBodies"][i]["constraints"]
-
   for c in meshData["rigidBodies"][i]["constraints"]:
-    meshData['constraints'][c] = {}
+    meshData['constraints'][c] = getConstraintData(c)
 
 
 # populate the constraint data
@@ -156,36 +180,11 @@ for i in meshData['constraints']:
 
 
 
-  
-# rigidBodies = {}
-# for i in meshData["jointData"]:
-  
-#   bodies = meshData["jointData"][i]["parentConstraints"]
-
-#   for b in bodies:
-
-#     rigidBodies[b] = {
-#       "bound" : getBoundingBox(b),
-#       "transform" : cmds.xform( b, q=1, m=1, worldSpace=True )
-#     }
-    
-# print rigidBodies
-
-# for i in rigidBodies:
-#   print cmds.listRelatives(i, c=1)
-#   print "connections",cmds.listConnections(i, type="constraint")
-#   for j in cmds.listRelatives(i, c=1):
-#     print "connections",cmds.listConnections(j, type="constraint")
-
-#   # for c in cmds.listRelatives( i, c=1, type="bulletRigidBodyShape") or cmds.listRelatives( i, c=1, type="rigidBody") or []:
-#   #   print cmds.listConnections(c)
-
-
 print meshData["jointData"]
 
 # write a json file
-# exportText(json.dumps(meshData, indent=4), getFileLocation(0, '.json'))
-json.dumps(meshData, indent=4)
+exportText(json.dumps(meshData, indent=4), getFileLocation(0, '.json'))
+# json.dumps(meshData, indent=4)
 
 
 cmds.select(origSelect, r=1)
