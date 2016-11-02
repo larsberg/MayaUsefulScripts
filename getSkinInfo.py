@@ -30,7 +30,8 @@ def flattenArray(forest, maxIndex = 3):
 def getSkinWeights(skinFn, meshDag):
 
   # get the per vertex joint weights
-  skinVertexWeights = [];
+  jointWeights = []
+  jointIndices = []
   vertIter = om.MItMeshVertex(meshDag)
 
   numWeightsPerVertex = 0
@@ -43,22 +44,25 @@ def getSkinWeights(skinFn, meshDag):
     vertexWeights = skinFn.getWeights(meshDag, vertIter.currentItem())[0]
 
     # trim the empty weights and get the joint index
-    vertexWeights = [ (index, w) for index, w in enumerate(vertexWeights) if w > 0.0]
+    vertexJointData = [ (index, w) for index, w in enumerate(vertexWeights) if w > 0.0]
 
-    numWeightsPerVertex = max(len(vertexWeights), numWeightsPerVertex);
+    numWeightsPerVertex = max(len(vertexJointData), numWeightsPerVertex);
 
-    skinVertexWeights.append( vertexWeights )
+    jointIndices.append( [ w[0] for w in vertexJointData] )
+    jointWeights.append( [ w[1] for w in vertexJointData] )
   
     printProgress(i, vertIter.count(), 'getSkinWeights:')
 
   # make sure they all have the right number of weights
-  for i in skinVertexWeights:
+  for i in jointWeights:
     if len(i) < numWeightsPerVertex:
-      print len(i)
+      
+      print "numWeightsPerVertex: " + str(len(i))
+      
       for j in range(len(i), numWeightsPerVertex):
         i.append( (0,0) )
 
-  return (skinVertexWeights, numWeightsPerVertex)
+  return (jointWeights, jointIndices, numWeightsPerVertex)
 
 
 
@@ -73,7 +77,8 @@ def getSkinInfo(nodeName):
   weights = getSkinWeights(skinFn, meshDag)
 
   return {
-    'weights' : weights[0],
-    "numWeightsPerVertex" : weights[1],
-    'joints' : [ j.partialPathName() for j in skinFn.influenceObjects()] # skinFn.influenceObjects()
+    'vertexJointWeights' : weights[0],
+    'vertexJointIndices' : weights[1],
+    "numWeightsPerVertex" : weights[2],
+    'jointNames' : [ j.partialPathName() for j in skinFn.influenceObjects()] # skinFn.influenceObjects()
   }

@@ -6,8 +6,7 @@ if 'includeScript' not in locals():
 # includes 
 includeScript('laserMayaImports.py', '/Users/laserstorm/MayaUsefulScripts/')
 includeScript('laserOpenMayaImports.py', '/Users/laserstorm/MayaUsefulScripts/')
-includeScript('printProgress.py', '/Users/laserstorm/MayaUsefulScripts/')
-
+includeScript('flattenArray.py', '/Users/laserstorm/MayaUsefulScripts/')
 
 
 def getUVs(meshFn):
@@ -16,14 +15,43 @@ def getUVs(meshFn):
 
   for i in meshFn.getUVSetNames():
     uv = meshFn.getUVs(i)
-    uvs[i] = [val for pair in zip(uv[0], uv[1]) for val in pair]
+    uvs[i] = [[pair[0], pair[1]] for pair in zip(uv[0], uv[1])]
+    # uvs[i] = [val for pair in zip(uv[0], uv[1]) for val in pair]
 
   return uvs
 
 
+def getTangents(meshFn, coordSpace):
 
-def flattenArray(forest, maxIndex = 3):
-  return [leaf for tree in forest for index, leaf in enumerate(tree) if index < maxIndex]
+  tangents = {}
+
+  for i in meshFn.getUVSetNames():
+    tangents[i] = meshFn.getTangents(coordSpace, i)
+
+  return tangents
+
+def getFaces(meshDag):
+
+  polyIter = om.MItMeshPolygon(meshDag)
+
+  faces = []
+  
+  for p in range(polyIter.count()):
+
+    polyIter.setIndex(p)
+
+    fv = [i for i in polyIter.getVertices()]
+    fn = []
+    fuv = []
+
+    # TODO: handle multiple uv sets
+    for i, vIndex in enumerate(fv):
+      fn.append( polyIter.normalIndex(i) )
+      fuv.append( polyIter.getUVIndex(i) )
+
+    faces.append([fv,fn,fuv])
+
+  return faces
 
 
 def getMeshData(nodeName, coordSpace = om.MSpace.kWorld ):
@@ -36,15 +64,21 @@ def getMeshData(nodeName, coordSpace = om.MSpace.kWorld ):
 
   uvs = getUVs(meshFn)
 
-  for i in uvs:
-    print len(uvs[i])
-  #   uvs[i] = flattenArray[uvs[i]]
+  faces = getFaces(meshDag)
+
+  positions = [[p for p in i ] for i in meshFn.getFloatPoints(coordSpace)] 
+
+  normals = [[n for n in i ] for i in meshFn.getNormals(coordSpace)] 
+
+  print uvs
 
   return {
-    "position" : flattenArray(meshFn.getFloatPoints(coordSpace)),
-    "normal" : flattenArray(meshFn.getNormals(coordSpace)),
-    "uvs" : uvs,
-    "faces" : None
+    "position" : positions,
+    "normal" : normals,
+    "uv" : uvs,
+    "faces" : faces
+    # "binormals" : meshFn.getBinormals(coordSpace),
+    # "tangents" : getTangents(meshFn, coordSpace),
   }
 
 
