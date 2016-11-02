@@ -25,11 +25,33 @@ meshData = getMeshData( m )
 skinWeights = getSkinInfo( m )
 
 
+
 def getBoundingBox(nodeName, objectSpace=True):
   return cmds.xform( nodeName, q=1, bb=1, os=objectSpace )
 
+
 def getRigidBodies(nodeName):
   return cmds.listRelatives( nodeName, c=1, type="bulletRigidBodyShape") or cmds.listRelatives( nodeName, c=1, type="rigidBody") or []
+
+
+def getRigidBodyConstraints(nodeName):
+
+  constraints = []
+
+  for c in [i for i in cmds.listConnections(nodeName)]:
+    
+    for s in cmds.listRelatives( c, s=1) or []:
+      
+      if cmds.objectType(s) == 'bulletRigidBodyConstraintShape':
+      
+        constraints.append(c)
+
+  return constraints
+
+  
+
+
+
 
 def getRigidBodyShapeType(rb):
   
@@ -64,7 +86,7 @@ def getRigidBodyInfo(nodeName):
     "extents" : [i for i in cmds.getAttr(nodeName + '.extents' )[0]],
     "centerOfMass" : [i for i in cmds.getAttr(nodeName + '.centerOfMass' )[0]],
     "colliderOffset" : [i for i in cmds.getAttr(nodeName + '.colliderShapeOffset' )[0]],
-    "constraints" : "TODO: get the constraints. try cmds.listConnections ?"
+    "constraints" : getRigidBodyConstraints(nodeName)
   }
 
 
@@ -118,6 +140,19 @@ for i in meshData["jointData"]:
 meshData["rigidBodies"] = rigidBodies
 
 
+# get the names for each constraint
+meshData['constraints'] = {}
+for i in meshData["rigidBodies"]:
+
+  print meshData["rigidBodies"][i]["constraints"]
+
+  for c in meshData["rigidBodies"][i]["constraints"]:
+    meshData['constraints'][c] = {}
+
+
+# populate the constraint data
+for i in meshData['constraints']:
+  print i, meshData['constraints'][i]
 
 
 
