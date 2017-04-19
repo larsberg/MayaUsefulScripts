@@ -1,105 +1,42 @@
 # exportMeshJson.py
 
-
-if 'cmds' not in locals():
-  import maya.cmds as cmds
-
-
 import json
 
+if 'includeScript' not in locals():
+  def includeScript(path, cwd=''):
+    exec (open(cwd + path, 'r').read(), globals())
 
-import maya.OpenMaya as OpenMaya
-
-
-def exportText( text, path ):
-  t = open(path, "w")
-  t.write( text )
-  t.close()
-
-
-def getFileLocation(filemode=0, fileType="json"):
-  return cmds.fileDialog2(fileMode=filemode, ff=fileType)[0]
+# includes
+includeScript('getMeshData.py', '/Users/laserstorm/MayaUsefulScripts/')
+includeScript('exportText.py', '/Users/laserstorm/MayaUsefulScripts/')
+includeScript('getFileLocation.py', '/Users/laserstorm/MayaUsefulScripts/')
 
 
-# similar to obj format
-def exportVertexArrays( mesh, prec=6 ):
+def exportMeshJson( m, pretty=False ):
 
-  if mesh is None:
-    return
+  # mesh data
+  meshData = getMeshData( m )
 
-  # get the dag path from the mesh name
-  selection = OpenMaya.MSelectionList()
-  selection.add( mesh )
-  iterSel = OpenMaya.MItSelectionList(selection, OpenMaya.MFn.kGeometric)
+  # add the transform
+  meshData['transform'] = cmds.xform(m, q=1, m=1, worldSpace=True )
 
-  dagPath = OpenMaya.MDagPath()
-  iterSel.getDagPath( dagPath )
+  # flatten arrays
+  meshData['position'] = [ p[i] for p in meshData['position'] for i in range(3) ]
+  meshData['normal']   = [ n[i] for n in meshData['normal'] for i in range(3) ]
+  meshData['uv']       = [ u[i] for u in meshData['uv'] for i in range(2) ]
 
-  # our mesh function set
-  meshFn = OpenMaya.MFnMesh(dagPath)
-
-
-  # vertex data
-  points = OpenMaya.MPointArray()
-  normalArray = OpenMaya.MFloatVectorArray()
-  uArray = OpenMaya.MFloatArray()
-  vArray = OpenMaya.MFloatArray()
-
-  # vertex face counts
-  vertexCountMIntArray = OpenMaya.MIntArray()
-  normalCountMIntArray = OpenMaya.MIntArray()
-  uvCountMIntArray = OpenMaya.MIntArray()
-
-  # face vertex index arrays
-  vertexIndexArray = OpenMaya.MIntArray()
-  normalIndexArray = OpenMaya.MIntArray()
-  uvIdsMIntArray = OpenMaya.MIntArray()
-
-  # get the vertex values
-  meshFn.getPoints( points, OpenMaya.MSpace.kWorld )
-  meshFn.getNormals( normalArray, OpenMaya.MSpace.kWorld )
-  meshFn.getUVs( uArray, vArray )
-
-  # get the face vertex indices
-  meshFn.getVertices( vertexCountMIntArray, vertexIndexArray )
-  meshFn.getNormalIds( normalCountMIntArray, normalIndexArray )
-  meshFn.getAssignedUVs( uvCountMIntArray, uvIdsMIntArray )
-
-
-  faces = []
-
-
-  for i in range(vertexIndexArray.length()):
-    faces.append( [vertexIndexArray[i], normalIndexArray[i], uvIdsMIntArray[i] ] )
-
-
-  output = {
-    'position' : [],    # [[x,y,z], ... ]
-    'normal' : [],      # [[x,y,z], ... ]
-    'uv' : [],          # [[u,v], ... ]
+  meshData['itemSize'] = {
+    'position' : 3,
+    'normal' : 3,
+    'uv' : 2
   }
 
-
-  for f in faces:
-    # print f
-
-    p = points[f[0]]
-    n = normalArray[f[1]]
-    u = uArray[f[2]]
-    v = vArray[f[2]]
-
-    output['position'].extend( [round(x, prec) for x in [p[0],p[1],p[2]]] )
-
-    output['normal'].extend( [round(x,prec) for x in [n[0],n[1],n[2]]] )
-    
-    output['uv'].extend( [round(x,prec) for x in [u,v]] )
-
-
-  # export the arrays as a json
-  exportText(json.dumps( output ), getFileLocation())
-
-  return output
+  # write the file
+  if pretty:
+    exportText(json.dumps(meshData, indent=pretty), getFileLocation(0, '.json'))
+  else:
+    exportText(json.dumps(meshData), getFileLocation(0, '.json'))
 
 
 
-exportVertexArrays(cmds.ls(sl=1,fl=1)[0])
+exportMeshJson( cmds.ls(sl=1,fl=1)[0], False )

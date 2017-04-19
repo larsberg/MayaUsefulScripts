@@ -12,10 +12,6 @@ includeScript('getFileLocation.py', '/Users/laserstorm/MayaUsefulScripts/')
 includeScript('flattenArray.py', '/Users/laserstorm/MayaUsefulScripts/')
 
 
-origSelect = cmds.ls(sl=1,fl=1)[0]
-
-cmds.select("pCube1", r=1)
-
 m = cmds.ls(sl=1,fl=1)[0]
 
 # mesh data
@@ -23,8 +19,6 @@ meshData = getMeshData( m )
 
 # skin weights
 skinWeights = getSkinInfo( m )
-
-
 
 def getBoundingBox(nodeName, objectSpace=True):
   return cmds.xform( nodeName, q=1, bb=1, os=objectSpace )
@@ -125,10 +119,12 @@ for i in skinWeights:
   meshData[i] = skinWeights[i]
 
 
+
 # get the joint heirarchy and constraints
 meshData["jointData"] = {}
 for i in skinWeights["jointNames"]:
 
+  print i
   # get parent
   parent = cmds.listRelatives( i, p=1 )
 
@@ -137,6 +133,8 @@ for i in skinWeights["jointNames"]:
   
   # get constraints
   parentConstraints = [cmds.parentConstraint(c, q=1,targetList=1 )[0] for c in cmds.listRelatives(i, type="parentConstraint")]
+
+  print parentConstraints
 
   meshData["jointData"][i] = {
     "name" : i,
@@ -159,7 +157,10 @@ rigidBodies = {}
 
 for i in meshData["jointData"]:
 
+  print i
+
   for rb in meshData["jointData"][i]["rigidBodies"]:
+    print rb
     rigidBodies[rb] = getRigidBodyInfo(rb)
 
 

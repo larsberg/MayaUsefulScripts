@@ -30,14 +30,14 @@ def getDagPath(nodeName):
 
 
 def pointInTriangle(t0, t1, t2, u, v):
-  
+
   if ( u + v ) > 1:
     u = 1.0 - u;
     v = 1.0 - v;
 
   return t0 * u + t1 * v + t2 * (1 - u - v);
 
-  
+
 def areaOfTriangle(p0, p1, p2):
   return ((p2 - p1) ^ (p0 - p1)).length() * .5;
 
@@ -46,7 +46,7 @@ def getRandomPoints(nodeName, count = 100):
 
   dagPath = getDagPath(nodeName)
 
-  mfnMesh = om.MFnMesh(dagPath) 
+  mfnMesh = om.MFnMesh(dagPath)
 
   numFaces = mfnMesh.numPolygons
 
@@ -119,7 +119,7 @@ def getDistributedRandomPoints(nodeName, count):
 
   dagPath = getDagPath(nodeName)
 
-  mfnMesh = om.MFnMesh(dagPath) 
+  mfnMesh = om.MFnMesh(dagPath)
 
   points = [ om.MVector(p) for p in mfnMesh.getPoints() ]
 
@@ -128,7 +128,7 @@ def getDistributedRandomPoints(nodeName, count):
   triIndices = mfnMesh.getTriangles()[1]
 
   triangles = []
-  
+
   totalArea = 0
 
   for i in range(0, len(triIndices), 3):
@@ -155,8 +155,8 @@ def getDistributedRandomPoints(nodeName, count):
 
   # sort by area
   triangles.sort(compareAreas)
-  
-  
+
+
   # which index do we start on
   prog = 0
   for t in triangles:

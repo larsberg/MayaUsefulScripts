@@ -76,6 +76,8 @@ def getSkinInfo(nodeName):
 
   weights = getSkinWeights(skinFn, meshDag)
 
+  print [ j.partialPathName() for j in skinFn.influenceObjects()]
+
   return {
     'vertexJointWeights' : weights[0],
     'vertexJointIndices' : weights[1],

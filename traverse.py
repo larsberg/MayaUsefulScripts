@@ -1,7 +1,8 @@
 
 def traverseDown( obj, callback ):
     
-  children = getChildren( obj )
+  children = cmds.listRelatives(obj, c=1)
+  # children = getChildren( obj )
   
   if children != None:
     
@@ -15,7 +16,8 @@ def traverseDown( obj, callback ):
 
 def traverseUp( obj, callback ):
 
-  p = getParent( obj )
+  p = cmds.listRelatives(obj, p=1)
+  # p = getParent( obj )
   
   if p != None:
     
